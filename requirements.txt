@@ -1,0 +1,6 @@
+python-telegram-bot
+yt-dlp
+python-dotenv
+google-generativeai
+groq
+requests
