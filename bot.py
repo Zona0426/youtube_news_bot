@@ -60,7 +60,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     welcome_message = (
         f"👋 你好，{html.escape(user.first_name)}！\n\n"
-        "我是你的 <b>YouTube 影片深度研報助理（本機電腦版）</b> 🤖\n\n"
+        "我是你的 <b>YouTube 影片深度研報助理</b> 🤖\n\n"
         "📌 <b>功能亮點</b>：\n"
         "• 支援高精度字幕提取與 Groq Whisper 極速轉錄\n"
         "• 採用 Gemini 3.8-Flash 深度剖析因果邏輯與個股亮點\n"
@@ -109,23 +109,26 @@ def get_youtube_transcript(video_id: str) -> str | None:
 
 
 def download_audio_stream(youtube_url: str, output_dir: str) -> str:
-    """本機電腦專用下載設定（使用最穩定的標準 yt-dlp 參數）"""
     output_path = os.path.join(output_dir, "audio.m4a")
-    os.makedirs(output_dir, exist_ok=True)
-    
-    if os.path.exists(output_path):
-        os.remove(output_path)
-        
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": output_path,
         "quiet": True,
         "no_warnings": True,
+        # 透過多個播放客戶端自動輪替，繞過單一來源限制
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["web", "mweb", "android", "ios"]
+            }
+        },
+        # 加上隨機或常見的真實瀏覽器標頭
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+        },
     }
-    
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([youtube_url])
-        
     return output_path
 
 
@@ -186,7 +189,7 @@ PROMPT_ANALYSIS = """
 
 # 🏢 影片提及公司與個股深度剖析表
 
-若影片中提及任何企業、個股, ETF 或全球龍頭（包含口語簡稱、台股、美股），請整理成下方 Markdown 表格。若確實未提及任何公司，請填寫「本影片未涉及特定公司」。
+若影片中提及任何企業、個股、ETF 或全球龍頭（包含口語簡稱、台股、美股），請整理成下方 Markdown 表格。若確實未提及任何公司，請填寫「本影片未涉及特定公司」。
 
 | 公司名稱 | 股票代號 (台/美) | 核心產業類別 | 競爭優勢與核心業務 | 影片分析重點與潛在催化劑/風險 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -488,7 +491,7 @@ async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 主程式入口
 # ----------------------------------------------------
 def main():
-    logger.info("⏳ 正在啟動 Telegram 機器人服務（本機電腦版）...")
+    logger.info("⏳ 正在啟動 Telegram 機器人服務...")
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start_handler))
@@ -496,7 +499,7 @@ def main():
         MessageHandler(filters.TEXT & (~filters.COMMAND), message_router)
     )
 
-    logger.info("🚀 Telegram 筆記機器人已在本機順利上線！")
+    logger.info("🚀 Telegram 筆記機器人已全面上線！")
     app.run_polling()
 
 
