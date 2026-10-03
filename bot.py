@@ -112,15 +112,12 @@ def download_audio_stream(youtube_url: str, output_dir: str) -> str:
     """下載原生物理音訊檔，並帶入 cookies.txt 繞過驗證"""
     output_path = os.path.join(output_dir, "audio.m4a")
     ydl_opts = {
-        "format": "worstaudio[ext=m4a]/ba[ext=m4a]/ba/b",
+        "format": "bestaudio/best",  # 改成最通用的自動選擇最佳音訊
         "outtmpl": output_path,
         "quiet": True,
         "no_warnings": True,
-        "cookiefile": "cookies.txt",  # <--- 這行一定要有！
+        "cookiefile": "cookies.txt",
         "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
-        "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        },
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([youtube_url])
