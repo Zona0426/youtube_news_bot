@@ -110,7 +110,7 @@ def get_youtube_transcript(video_id: str) -> str | None:
 
 
 def download_audio_stream(youtube_url: str, output_dir: str) -> str:
-    """使用系統命令列透過 mweb 通道下載 YouTube 音訊，避開 IP 封鎖與 Cookie 限制"""
+    """使用系統命令列透過 mweb 通道下載 YouTube 音訊，相容所有 Python 版本"""
     output_path = os.path.join(output_dir, "audio.m4a")
     os.makedirs(output_dir, exist_ok=True)
     
@@ -127,7 +127,14 @@ def download_audio_stream(youtube_url: str, output_dir: str) -> str:
         youtube_url
     ]
     
-    result = subprocess.run(command, captureoutput=True, text=True)
+    # 使用相容性更好的 stdout/stderr 重新導向取代 captureoutput
+    result = subprocess.run(
+        command, 
+        stdout=subprocess.PIPE, 
+        stderr=subprocess.PIPE, 
+        text=True
+    )
+    
     if result.returncode != 0:
         raise Exception(f"下載失敗: {result.stderr}")
         
