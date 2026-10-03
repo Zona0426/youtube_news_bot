@@ -109,26 +109,27 @@ def get_youtube_transcript(video_id: str) -> str | None:
 
 
 def download_audio_stream(youtube_url: str, output_dir: str) -> str:
+    """使用系統命令列透過 mweb 通道下載 YouTube 音訊，避開 IP 封鎖與 Cookie 限制"""
     output_path = os.path.join(output_dir, "audio.m4a")
-    ydl_opts = {
-        "format": "bestaudio/best",
-        "outtmpl": output_path,
-        "quiet": True,
-        "no_warnings": True,
-        # 透過多個播放客戶端自動輪替，繞過單一來源限制
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["web", "mweb", "android", "ios"]
-            }
-        },
-        # 加上隨機或常見的真實瀏覽器標頭
-        "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "Accept-Language": "en-US,en;q=0.9",
-        },
-    }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([youtube_url])
+    os.makedirs(output_dir, exist_ok=True)
+    
+    if os.path.exists(output_path):
+        os.remove(output_path)
+        
+    command = [
+        "yt-dlp",
+        "--extract-audio",
+        "--audio-format", "m4a",
+        "--output", output_path,
+        "--extractor-args", "youtube:player_client=mweb",
+        "--no-check-certificates",
+        youtube_url
+    ]
+    
+    result = subprocess.run(command, captureoutput=True, text=True)
+    if result.returncode != 0:
+        raise Exception(f"下載失敗: {result.stderr}")
+        
     return output_path
 
 
@@ -233,7 +234,6 @@ def generate_notes_from_text(full_text: str) -> str:
 # ----------------------------------------------------
 def convert_md_to_styled_html(md_content: str, title: str) -> str:
     """將 Markdown 轉為適合手機閱讀的精美自適應 HTML 網頁"""
-    # 啟用表格與程式碼區塊擴充
     body_html = markdown.markdown(
         md_content, extensions=["tables", "fenced_code"]
     )
@@ -331,7 +331,6 @@ def convert_md_to_styled_html(md_content: str, title: str) -> str:
             background: var(--border-color);
             margin: 28px 0;
         }}
-        /* 自適應股票剖析表格容器 */
         .table-wrapper {{
             width: 100%;
             overflow-x: auto;
@@ -372,7 +371,6 @@ def convert_md_to_styled_html(md_content: str, title: str) -> str:
     </div>
 </body>
 </html>"""
-    # 自動將 table 外面包一層可滑動的 div，確保手機端不破版
     html_template = html_template.replace(
         "<table>", '<div class="table-wrapper"><table>'
     ).replace("</table>", "</table></div>")
@@ -389,7 +387,6 @@ async def send_summary_and_file(
     video_id: str,
 ):
     """將報告轉成精美 HTML 檔案並發送附件給使用者"""
-    # 產出 HTML 網頁
     styled_html = convert_md_to_styled_html(
         markdown_text, f"YouTube 深度研報 - {video_id}"
     )
@@ -403,14 +400,12 @@ async def send_summary_and_file(
 
     chat_id = update.effective_chat.id
 
-    # 1. 聊天室文字預覽
     await context.bot.send_message(
         chat_id=chat_id,
         text=f"📊 <b>研報摘要速覽</b>：\n\n<pre>{html.escape(preview_snippet)}</pre>",
         parse_mode="HTML",
     )
 
-    # 2. 發送 .html 文件附件
     await context.bot.send_document(
         chat_id=chat_id,
         document=file_bytes,
