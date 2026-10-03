@@ -19,6 +19,7 @@ from telegram.ext import (
 )
 from youtube_transcript_api import YouTubeTranscriptApi
 import yt_dlp
+import subprocess
 
 # ----------------------------------------------------
 # 模塊 1：環境變數載入與身分驗證
