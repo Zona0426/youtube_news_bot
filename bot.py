@@ -19,7 +19,6 @@ from telegram.ext import (
 )
 from youtube_transcript_api import YouTubeTranscriptApi
 import yt_dlp
-import subprocess
 
 # ----------------------------------------------------
 # 模塊 1：環境變數載入與身分驗證
@@ -61,7 +60,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     welcome_message = (
         f"👋 你好，{html.escape(user.first_name)}！\n\n"
-        "我是你的 <b>YouTube 影片深度研報助理</b> 🤖\n\n"
+        "我是你的 <b>YouTube 影片深度研報助理（本機電腦版）</b> 🤖\n\n"
         "📌 <b>功能亮點</b>：\n"
         "• 支援高精度字幕提取與 Groq Whisper 極速轉錄\n"
         "• 採用 Gemini 3.8-Flash 深度剖析因果邏輯與個股亮點\n"
@@ -110,33 +109,22 @@ def get_youtube_transcript(video_id: str) -> str | None:
 
 
 def download_audio_stream(youtube_url: str, output_dir: str) -> str:
-    """使用系統命令列透過 mweb 通道下載 YouTube 音訊，相容所有 Python 版本"""
+    """本機電腦專用下載設定（使用最穩定的標準 yt-dlp 參數）"""
     output_path = os.path.join(output_dir, "audio.m4a")
     os.makedirs(output_dir, exist_ok=True)
     
     if os.path.exists(output_path):
         os.remove(output_path)
         
-    command = [
-        "yt-dlp",
-        "--extract-audio",
-        "--audio-format", "m4a",
-        "--output", output_path,
-        "--extractor-args", "youtube:player_client=mweb",
-        "--no-check-certificates",
-        youtube_url
-    ]
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "outtmpl": output_path,
+        "quiet": True,
+        "no_warnings": True,
+    }
     
-    # 使用相容性更好的 stdout/stderr 重新導向取代 captureoutput
-    result = subprocess.run(
-        command, 
-        stdout=subprocess.PIPE, 
-        stderr=subprocess.PIPE, 
-        text=True
-    )
-    
-    if result.returncode != 0:
-        raise Exception(f"下載失敗: {result.stderr}")
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([youtube_url])
         
     return output_path
 
@@ -198,7 +186,7 @@ PROMPT_ANALYSIS = """
 
 # 🏢 影片提及公司與個股深度剖析表
 
-若影片中提及任何企業、個股、ETF 或全球龍頭（包含口語簡稱、台股、美股），請整理成下方 Markdown 表格。若確實未提及任何公司，請填寫「本影片未涉及特定公司」。
+若影片中提及任何企業、個股, ETF 或全球龍頭（包含口語簡稱、台股、美股），請整理成下方 Markdown 表格。若確實未提及任何公司，請填寫「本影片未涉及特定公司」。
 
 | 公司名稱 | 股票代號 (台/美) | 核心產業類別 | 競爭優勢與核心業務 | 影片分析重點與潛在催化劑/風險 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -500,7 +488,7 @@ async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 主程式入口
 # ----------------------------------------------------
 def main():
-    logger.info("⏳ 正在啟動 Telegram 機器人服務...")
+    logger.info("⏳ 正在啟動 Telegram 機器人服務（本機電腦版）...")
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start_handler))
@@ -508,7 +496,7 @@ def main():
         MessageHandler(filters.TEXT & (~filters.COMMAND), message_router)
     )
 
-    logger.info("🚀 Telegram 筆記機器人已全面上線（HTML 手機優化版）！")
+    logger.info("🚀 Telegram 筆記機器人已在本機順利上線！")
     app.run_polling()
 
 
