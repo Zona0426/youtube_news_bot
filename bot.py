@@ -109,25 +109,18 @@ def get_youtube_transcript(video_id: str) -> str | None:
 
 
 def download_audio_stream(youtube_url: str, output_dir: str) -> str:
-    """下載原生物理音訊檔，加入客戶端偽裝避開 YouTube 403 阻擋"""
+    """下載原生物理音訊檔，並帶入 cookies.txt 繞過驗證"""
     output_path = os.path.join(output_dir, "audio.m4a")
     ydl_opts = {
         "format": "worstaudio[ext=m4a]/ba[ext=m4a]/ba/b",
         "outtmpl": output_path,
         "quiet": True,
         "no_warnings": True,
-        # --- 新增的關鍵偽裝設定 ---
-        "extractor_args": {"youtube": {"player_client": ["ios"]}},
+        "cookiefile": "cookies.txt",  # <--- 這行一定要有！
+        "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "none",
-            "Sec-Fetch-User": "?1",
-            "Upgrade-Insecure-Requests": "1",
         },
-        # -------------------------
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([youtube_url])
