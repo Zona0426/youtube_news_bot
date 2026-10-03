@@ -111,12 +111,14 @@ def get_youtube_transcript(video_id: str) -> str | None:
 def download_audio_stream(youtube_url: str, output_dir: str) -> str:
     output_path = os.path.join(output_dir, "audio.m4a")
     ydl_opts = {
-        "format": "bestaudio/best",
-        "outtmpl": output_path,
-        "quiet": True,
-        "no_warnings": True,
-        "cookiefile": "cookies.txt",  # 保留你的 cookies 身份驗證
-    }
+    "format": "bestaudio/best",
+    "outtmpl": output_path,
+    "quiet": True,
+    "no_warnings": True,
+    "cookiefile": "cookies.txt",
+    "extractor_args": {"youtube": {"player_client": ["android"]}},
+    "no_check_certificates": True,
+}
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([youtube_url])
     return output_path
