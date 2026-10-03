@@ -111,11 +111,22 @@ def get_youtube_transcript(video_id: str) -> str | None:
 def download_audio_stream(youtube_url: str, output_dir: str) -> str:
     output_path = os.path.join(output_dir, "audio.m4a")
     ydl_opts = {
-    "outtmpl": output_path,
-    "quiet": True,
-    "no_warnings": True,
-    "cookiefile": "cookies.txt",
-}
+        "format": "bestaudio/best",
+        "outtmpl": output_path,
+        "quiet": True,
+        "no_warnings": True,
+        # 透過多個播放客戶端自動輪替，繞過單一來源限制
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["web", "mweb", "android", "ios"]
+            }
+        },
+        # 加上隨機或常見的真實瀏覽器標頭
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+        },
+    }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([youtube_url])
     return output_path
