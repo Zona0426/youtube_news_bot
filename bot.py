@@ -116,8 +116,7 @@ def download_audio_stream(youtube_url: str, output_dir: str) -> str:
     "quiet": True,
     "no_warnings": True,
     "cookiefile": "cookies.txt",
-    "extractor_args": {"youtube": {"player_client": ["android"]}},
-    "no_check_certificates": True,
+    "extractor_args": {"youtube": {"player_client": ["web"]}},
 }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([youtube_url])
